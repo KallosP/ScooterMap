@@ -1,7 +1,9 @@
 package com.example.scootermap;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -16,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Program entry point
 
     private GoogleMap mMap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,11 +44,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
+        // Add a marker in California and move the camera
+        LatLng California = new LatLng(37, -119);
         mMap.addMarker(new MarkerOptions()
-                .position(sydney)
-                .title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+                .position(California)
+                .title("Marker At California"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(California));
+        //zoom button appears on map and allows double tap feature to zoom in as well
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setZoomGesturesEnabled(true);
+        //Gets rid of rotation to make it easier to use
+        googleMap.getUiSettings().setRotateGesturesEnabled(false);
+        //sets location to the users location whenever button is clicked
+
     }
 }
