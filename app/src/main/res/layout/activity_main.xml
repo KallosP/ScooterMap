@@ -15,7 +15,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment" />
 
     <SearchView
-        android:id="@+id/searchView"
+        android:id="@+id/searchViews"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:layout_editor_absoluteX="0dp"
@@ -26,6 +26,7 @@
         android:queryHint="Search..."
         android:iconifiedByDefault="false"
         android:layout_margin="10dp"
-        android:elevation="5dp"/>
+        android:elevation="5dp"
+        android:background="@drawable/background_search"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
