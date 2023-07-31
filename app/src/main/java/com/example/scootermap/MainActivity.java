@@ -15,6 +15,8 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -46,7 +48,7 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMyLocationClickListener {
+        GoogleMap.OnMyLocationClickListener, LocationListener {
 
     // Program entry point
     private GoogleMap mMap;
@@ -243,7 +245,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Change location settings
         createLocationRequest();
 
-        startLocationUpdates();
+        getCurrentLocation();
+        //startLocationUpdates();
     }
 
     // Change location settings
@@ -329,12 +332,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Stores updated location
                 mCurrentLocation = location;
 
-                Log.d("TEST", "Lat: " + mCurrentLocation.getLatitude());
-                Log.d("TEST", "Long: " + mCurrentLocation.getLongitude());
-
             }
         });
 
+    }
+
+    LocationManager locationManager;
+    @SuppressLint("MissingPermission")
+    void getCurrentLocation(){
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2500, 0, this);
+
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onLocationChanged(@NonNull Location location) {
+
+        mMap.setMyLocationEnabled(true);
+        // Set the current lat and long
+        mCurrentLocation = location;
+
+        Log.d("TEST", "Lat: " + mCurrentLocation.getLatitude());
+        Log.d("TEST", "Long: " + mCurrentLocation.getLongitude());
     }
 
 
