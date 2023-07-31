@@ -12,18 +12,24 @@ package com.example.scootermap;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Modified by Peter Kallos (https://github.com/KallosP)
 
 import android.Manifest;
 import android.Manifest.permission;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
+
+import android.provider.Settings;
 import android.widget.Toast;
 
 /**
@@ -31,19 +37,20 @@ import android.widget.Toast;
  */
 public abstract class PermissionUtils {
 
+
     /**
      * Requests the fine and coarse location permissions. If a rationale with an additional
      * explanation should be shown to the user, displays a dialog that triggers the request.
      */
-    public static void requestLocationPermissions(AppCompatActivity activity, int requestId,
-                                                  boolean finishActivity) {
+    public static void requestLocationPermissions(AppCompatActivity activity, int requestId) {
         if (ActivityCompat
                 .shouldShowRequestPermissionRationale(activity, permission.ACCESS_FINE_LOCATION) ||
                 ActivityCompat.shouldShowRequestPermissionRationale(activity,
                         permission.ACCESS_COARSE_LOCATION)) {
             // Display a dialog with rationale.
-            PermissionUtils.RationaleDialog.newInstance(requestId, finishActivity)
-                    .show(activity.getSupportFragmentManager(), "dialog");
+            PermissionUtils.RationaleDialog.newInstance(requestId, false)
+                        .show(activity.getSupportFragmentManager(), "dialog");
+
         } else {
             // Location permission has not been granted yet, request it.
             ActivityCompat.requestPermissions(activity,
@@ -73,42 +80,45 @@ public abstract class PermissionUtils {
      */
     public static class PermissionDeniedDialog extends DialogFragment {
 
-        private static final String ARGUMENT_FINISH_ACTIVITY = "finish";
-
-        private boolean finishActivity = false;
-
         /**
          * Creates a new instance of this dialog and optionally finishes the calling Activity when
          * the 'Ok' button is clicked.
          */
         public static PermissionDeniedDialog newInstance(boolean finishActivity) {
             Bundle arguments = new Bundle();
-            arguments.putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity);
 
             PermissionDeniedDialog dialog = new PermissionDeniedDialog();
             dialog.setArguments(arguments);
             return dialog;
         }
 
+        // Called every other time after first time app is opened
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            finishActivity = getArguments().getBoolean(ARGUMENT_FINISH_ACTIVITY);
 
             return new AlertDialog.Builder(getActivity())
-                    .setMessage("CHANGE ME")
-                    .setPositiveButton(android.R.string.ok, null)
+                    .setMessage("Enable location permissions to show scooters on map.")
+                    .setPositiveButton("Open my settings", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            openAppSettings();
+                        }
+                    })
+                    .setNegativeButton("Later", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    })
                     .create();
         }
 
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            super.onDismiss(dialog);
-            if (finishActivity) {
-                Toast.makeText(getActivity(), "CHANGE ME",
-                        Toast.LENGTH_SHORT).show();
-                getActivity().finish();
-            }
+        private void openAppSettings() {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", getActivity().getPackageName(), null));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         }
+
     }
 
     /**
@@ -121,10 +131,6 @@ public abstract class PermissionUtils {
     public static class RationaleDialog extends DialogFragment {
 
         private static final String ARGUMENT_PERMISSION_REQUEST_CODE = "requestCode";
-
-        private static final String ARGUMENT_FINISH_ACTIVITY = "finish";
-
-        private boolean finishActivity = false;
 
         /**
          * Creates a new instance of a dialog displaying the rationale for the use of the location
@@ -140,20 +146,19 @@ public abstract class PermissionUtils {
         public static RationaleDialog newInstance(int requestCode, boolean finishActivity) {
             Bundle arguments = new Bundle();
             arguments.putInt(ARGUMENT_PERMISSION_REQUEST_CODE, requestCode);
-            arguments.putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity);
             RationaleDialog dialog = new RationaleDialog();
             dialog.setArguments(arguments);
             return dialog;
         }
 
+        // Called first time app is opened
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             Bundle arguments = getArguments();
             final int requestCode = arguments.getInt(ARGUMENT_PERMISSION_REQUEST_CODE);
-            finishActivity = arguments.getBoolean(ARGUMENT_FINISH_ACTIVITY);
 
             return new AlertDialog.Builder(getActivity())
-                    .setMessage("CHANGE ME")
+                    .setMessage("Enable location permissions to find scooters near you")
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -161,24 +166,16 @@ public abstract class PermissionUtils {
                             ActivityCompat.requestPermissions(getActivity(),
                                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                                     requestCode);
-                            // Do not finish the Activity while requesting permission.
-                            finishActivity = false;
                         }
                     })
-                    .setNegativeButton(android.R.string.cancel, null)
+                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // TODO: Create a static text area to suggest the
+                            //       user to turn on location permissions
+                        }
+                    })
                     .create();
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            super.onDismiss(dialog);
-            if (finishActivity) {
-                Toast.makeText(getActivity(),
-                                "CHANGE ME",
-                                Toast.LENGTH_SHORT)
-                        .show();
-                getActivity().finish();
-            }
         }
     }
 }

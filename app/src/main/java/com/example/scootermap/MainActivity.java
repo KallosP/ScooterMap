@@ -54,6 +54,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private SearchView SearchScooter;
 
+    // Important flag for fixing infinite loop with alert dialogs
+    private boolean locationPermissionRequested = false;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean permissionDenied = false;
 
     void enableMyLocation() {
+
         // 1. Check if permissions are granted, if so, enable the my location layer
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
@@ -160,13 +165,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 == PackageManager.PERMISSION_GRANTED) {
 
             // Enable location layer (display user location)
-            mMap.setMyLocationEnabled(true);
+            if(mMap != null){
+                mMap.setMyLocationEnabled(true);
+            }
             startLocationProcedures();
             return;
         }
 
-        // 2. Otherwise, request location permissions from the user.
-        PermissionUtils.requestLocationPermissions(this, LOCATION_PERMISSION_REQUEST_CODE, true);
+        // Check if the permission has been requested before
+        if (!locationPermissionRequested) {
+            // 2. Otherwise, request location permissions from the user.
+            PermissionUtils.requestLocationPermissions(this, LOCATION_PERMISSION_REQUEST_CODE);
+            // Set the flag to true to indicate that the permission has been requested
+            locationPermissionRequested = true;
+        }
     }
 
     @Override
@@ -243,100 +255,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 });
 
         // Change location settings
-        createLocationRequest();
+        // TODO: Not needed for now. Should figure before publishing app just in case it's required. Research further
+        //createLocationRequest();
 
         getCurrentLocation();
-        //startLocationUpdates();
+
     }
 
-    // Change location settings
-    LocationRequest locationRequest;
-    protected void createLocationRequest() {
-
-        locationRequest = LocationRequest.create();
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest);
-
-       // LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-
-        SettingsClient client = LocationServices.getSettingsClient(this);
-        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
-        requestingLocationUpdates = true;
-        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
-            @Override
-            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                // All location settings are satisfied. The client can initialize
-                // location requests here.
-                // ...
-            }
-        });
-
-        task.addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (e instanceof ResolvableApiException) {
-                    // Location settings are not satisfied, but this can be fixed
-                    // by showing the user a dialog.
-                    try {
-                        // Show the dialog by calling startResolutionForResult(),
-                        // and check the result in onActivityResult().
-                        ResolvableApiException resolvable = (ResolvableApiException) e;
-                        resolvable.startResolutionForResult(MainActivity.this,
-                                0x1);
-                    } catch (IntentSender.SendIntentException sendEx) {
-                        // Ignore the error.
-                    }
-                }
-            }
-        });
-    }
-
-    // Request Location Updates
-    public boolean requestingLocationUpdates = false;
     @Override
     protected void onResume() {
         super.onResume();
-
-        //if (requestingLocationUpdates) {
-            //startLocationUpdates();
-       // }
+        enableMyLocation();
     }
 
-    @SuppressLint("MissingPermission")
-    private void startLocationUpdates() {
-        LocationCallback locationCallback;
-
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    return;
-                }
-                for (Location location : locationResult.getLocations()) {
-                    // Update UI with location data
-                    // ...
-                }
-            }
-        };
-
-        fusedLocationClient.requestLocationUpdates(locationRequest,
-                locationCallback,
-                Looper.getMainLooper());
-
-        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) {
-                // Stores updated location
-                mCurrentLocation = location;
-
-            }
-        });
-
-    }
-
+    // Request Location Updates
     LocationManager locationManager;
     @SuppressLint("MissingPermission")
     void getCurrentLocation(){
@@ -345,6 +277,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    // Store Location Updates
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(@NonNull Location location) {
@@ -356,6 +289,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d("TEST", "Lat: " + mCurrentLocation.getLatitude());
         Log.d("TEST", "Long: " + mCurrentLocation.getLongitude());
     }
+
+    // Change location settings
+//    LocationRequest locationRequest;
+//    protected void createLocationRequest() {
+//
+//        locationRequest = LocationRequest.create();
+//        locationRequest.setInterval(10000);
+//        locationRequest.setFastestInterval(5000);
+//        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+//
+//        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+//                .addLocationRequest(locationRequest);
+//
+//       // LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+//
+//        SettingsClient client = LocationServices.getSettingsClient(this);
+//        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+//        requestingLocationUpdates = true;
+//        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+//            @Override
+//            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+//                // All location settings are satisfied. The client can initialize
+//                // location requests here.
+//                // ...
+//            }
+//        });
+//
+//        task.addOnFailureListener(this, new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception e) {
+//                if (e instanceof ResolvableApiException) {
+//                    // Location settings are not satisfied, but this can be fixed
+//                    // by showing the user a dialog.
+//                    try {
+//                        // Show the dialog by calling startResolutionForResult(),
+//                        // and check the result in onActivityResult().
+//                        ResolvableApiException resolvable = (ResolvableApiException) e;
+//                        resolvable.startResolutionForResult(MainActivity.this,
+//                                0x1);
+//                    } catch (IntentSender.SendIntentException sendEx) {
+//                        // Ignore the error.
+//                    }
+//                }
+//            }
+//        });
+//    }
 
 
 }
