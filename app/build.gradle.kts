@@ -70,4 +70,12 @@ dependencies {
     // Google Stuff
     implementation ("com.google.android.gms:play-services-maps:18.1.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // okHTTP (HTTP client: https://square.github.io/okhttp/#releases)
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    // define a BOM and its version
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+    // define any required OkHttp artifacts without version
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 }
