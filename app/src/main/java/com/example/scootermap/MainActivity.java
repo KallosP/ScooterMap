@@ -18,6 +18,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.SearchView;
@@ -36,6 +37,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.internal.ICameraUpdateFactoryDelegate;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -43,7 +45,13 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,13 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Important flag for fixing infinite loop with alert dialogs
     private boolean locationPermissionRequested = false;
 
-    final String email = "retepsollak@gmail.com";
-
-    private static final String BASE_URL = "https://api-auth.prod.birdapp.com/api/v1/auth/email";
-    private static final MediaType JSON = MediaType.parse("application/json");
-    private static final String USER_AGENT = "Bird/4.119.0(co.bird.Ride; build:3; Android 10)";
-    private static final String GUID = UUID.randomUUID().toString();
-    String token = "eyJhbGciOiJSUzUxMiJ9.eyJqdGkiOiJiMjQ0ZmRlMy0wNDRlLTRmOWUtYmZhNi1iOTM0YTA2MGUyZWIiLCJzdWIiOiJkMjMwNDNjMC01NjYxLTRkMTctOTNkMC1iOWQ2ZWYwOTkzYzQiLCJuYmYiOjE2OTA5MTk0NjIsImV4cCI6MTY5MTAwNTg2MiwiYXVkIjoiYmlyZC5zZXJ2aWNlcyIsImlzcyI6ImJpcmQuYXV0aCIsImlhdCI6MTY5MDkxOTQ2Miwicm9sZXMiOlsiVVNFUiJdLCJhcHAiOiI3YjhlZDk1NS02ZTNhLTRlZWMtYmEyMC04OGFmOWQ3YWVhNzYiLCJ2ZXIiOiIwLjAuMiJ9.gekVgRFujLRwaLapgb2z1IiprT-9ptIhLGC_G4XxIEWErroaNTtXScka-r7m_yIAAwTAW7-U6LLGz1mhfckQWNQYFm8mxVtxazSirVJRUUFT16ROlrevq84a1uejpR7mMcFLgJ4C8C76DSZTZJfNvvz3KlfYp_ruSX0J49lgwyc4S3QtUyeyFJ5RlbGz4vholUP_2X_KB2U_iEOozlxa_7s30_hldUJIW8UvhPkKGjyaz-Hu0rf4ITqVUaDK4UNFXyjgpcE670ziyiqNAuGkEOfJ7KfUaWQCkvogARUjg4mZeW9NDDAUzS436_txcVW5k2CNEX9jdmjqFeJtKo3TMOd-15uJo_fuCsSM1y8uQWjqPvNXmCxv92KoBmgjIbJZPSWIIYoy_1cJuHIf5aOpmSUGTwfwhK1x8tGZMy04Fyjj89vYybsdRyiOlpX94WJTwBkwddnYuzx_Reo2i5dKRAON6qGQSvuMGwHT0i05x3dr8PTKQ-ZaqhAl0Ixql3L2RyQe_ztaTCRRW1FL6_IZMDx9sfB9MJZFj99jpTlo5RfVY7PtHNr4GIAVEuMdoWYapNxeKRtdKG9sDaeOX4b4YzH5qTmIcd8F1apwfPc6D6A_ou9xe2KJcYIGm2pSGCkjgLrYXG7aYUfxTN_EvJyx415wfU95Kk96ACDaSNmEs2I";
+    Context context = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,102 +88,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mapFragment.getMapAsync(this);
 
-        // TODO:  - move all API code to different class
-        //        - change lat/long in REQUEST LOCATION to user's current lat/long
-        //        - create system for getting, refreshing, and using AUTH token
-        //        - extract scooter locations from HTTP response string
-        //        - display markers based on extracted locations
-
-        // HTTP client
-        OkHttpClient client = new OkHttpClient();
-
-        // GET AUTH TOKEN VIA EMAIL (WORKING)
-//        String requestBody = "{\"email\":\"" + email + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//
-//        Request request = new Request.Builder()
-//                .url(BASE_URL)
-//                .header("User-Agent", USER_AGENT)
-//                .header("Device-Id", GUID)
-//                .header("Platform", "android")
-//                .header("App-Version", "4.119.0")
-//                .header("Content-Type", "application/json")
-//                .post(body)
-//                .build();
-
-        // USE AUTH TOKEN (WORKING)
-//        String requestBody = "{\"token\":\"" + token + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//        Request request = new Request.Builder()
-//                .url("https://api-auth.prod.birdapp.com/api/v1/auth/magic-link/use")
-//                .header("Device-Id", GUID)
-//                .post(body)
-//                .build();
-
-        // REFRESH AUTH TOKEN (MUST USE REFRESH TOKEN)
-//        String requestBody = "{\"token\":\"" + token + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//
-//        Request request = new Request.Builder()
-//                .url("https://api-auth.prod.birdapp.com/api/v1/auth/refresh/token")
-//                .addHeader("User-Agent", USER_AGENT)
-//                .addHeader("Device-Id", GUID)
-//                .addHeader("Platform", "android")
-//                .addHeader("App-Version", "4.119.0")
-//                .addHeader("Content-Type", "application/json")
-//                .addHeader("Authorization", "Bearer " + token)
-//                .post(body)
-//                .build();
-
-//        // REQUEST LOCATION (MUST USE ACCESS TOKEN)
-        Request request = new Request.Builder()
-                .url("https://api-bird.prod.birdapp.com/bird/nearby?latitude=37.77184&longitude=-122.40910&radius=1000")
-                .header("Authorization", "Bearer " + token)
-                .header("User-Agent", USER_AGENT)
-                .header("legacyrequest", "false")
-                .header("Device-Id", GUID)
-                .header("App-Version", "4.119.0")
-                .header("Location", "{\"latitude\":34.07005148224879,\"longitude\":-118.44380658840988,\"altitude\":500,\"accuracy\":65,\"speed\":-1,\"heading\":-1}")
-                .get()
-                .build();
-
-        // FIXME: REQUEST AREAS (NOT WORKING - 404)
-//        Request request = new Request.Builder()
-//                .url("https://api.birdapp.com/bird/nearby?latitude=37.77184&longitude=-122.40910&radius=1000")
-//                .header("Authorization", "Bearer " + token)
-//                .header("User-Agent", USER_AGENT)
-//                .header("legacyrequest", "false")
-//                .header("Device-Id", GUID)
-//                .header("App-Version", "4.119.0")
-//                .header("Location", "{\"latitude\":37.77249,\"longitude\":-122.40910,\"altitude\":500,\"accuracy\":65,\"speed\":-1,\"heading\":-1}")
-//                .get()
-//                .build();
-
-        // FIXME: REQUEST CONFIG (NOT WORKING - 404)
-//        Request request = new Request.Builder()
-//                .url("https://api.birdapp.com/config/location?latitude=42.3140089&longitude=-71.2490943")
-//                .header("App-Version", "4.119.0")
-//                .get()
-//                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.d("TEST", "Failure");
-                //e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                // Log.d("TEST", "Entered");
-                if(response.isSuccessful()){
-                    String myResponse = response.body().string();
-                    Log.d("TEST", "Response: " + myResponse);
-                }
-            }
-        });
-
-
+        APIHandler.setupAPIs();
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -195,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         addressList = geocoder.getFromLocationName(location, 1); //gets location name and puts it
                         //in address list
                     } catch (IOException e) {
-                        showToast("Error: Unable to fetch location data. Please try again.");
+                        Utilities.showToast(context, "Error: Unable to fetch location data. Please try again.");
                         return false;
                     }
 
@@ -205,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         mMap.addMarker(new MarkerOptions().position(latLng).title(location)); //adds marker to the position
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17)); //zooms into the location
                     } else {
-                        showToast("Error: Please Enter A Valid Location.");
+                        Utilities.showToast(context, "Error: Please Enter A Valid Location.");
                     }
                 }
 
@@ -218,12 +125,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
     }
-
-    // Utility method to show a Toast message
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
-
 
     /**
      * Manipulates the map once available.
@@ -251,9 +152,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Sets location to the users location whenever button is clicked
         enableMyLocation();
 
+        APIHandler.displayScooterMarkers(mMap);
+
     }
 
 
+    // TODO: Move to separate class
     // LOCATION PERMISSIONS -------------------------------
 
     /**
