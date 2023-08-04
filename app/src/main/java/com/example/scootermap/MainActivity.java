@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * This callback is triggered when the map is ready to be used.
      * This is where we can add markers or lines, add listeners or move the camera. In this case,
      * we just add a marker near Sydney, Australia.
-     *
+     * <p>
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
@@ -150,10 +150,47 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Sets location to the users location whenever button is clicked
         enableMyLocation();
-//        APIHandler.setupAPIs();
-//
-//        APIHandler.displayScooterMarkers(mMap);
+        SpinAPI.useAuth();
+
+        PonyAPI ponyAPI = new PonyAPI();
+
+        double latitude = 34.0699; // Replace with your latitude
+        double longitude = -118.4438; // Replace with your longitude
+
+        // Get the nearest region based on latitude and longitude
+        ponyAPI.getNearestRegion(latitude, longitude);
+
+        // Get the list of regions (cities)
+        String city = "Paris";
+        ponyAPI.getVehicleParkingLocations(city);
+        String phoneNumber = "+16612087195";
+        String otpCode = "12345";
+        String cookieValue = "";
+
+  ; // Replace with the actual cookie value
+        double neLat = 34.0742; // UCLA latitude for the northeast corner of the bounding box
+        double neLng = -118.4489; // UCLA longitude for the northeast corner of the bounding box
+        double swLat = 34.0623; // UCLA latitude for the southwest corner of the bounding box
+        double swLng = -118.4653; // UCLA longitude for the southwest corner of the bounding box
+        double userLat = 34.0709; // User's latitude (you can use UCLA campus coordinates if needed)
+        double userLng = -118.4441; // User's longitude (you can use UCLA campus coordinates if needed)
+        int zoom = 16; // Replace with the desired zoom level
+
+
+        LimeAPI.getVehiclesAndZones(LimeAPI.token,LimeAPI.cookieValue, neLat, neLng, swLat, swLng, userLat, userLng, zoom);
     }
+
+
+
+
+
+
+
+
+    //APIHandler.setupAPIs(mCurrentLocation);
+//
+  //APIHandler.displayScooterMarkers(mMap);
+
 
 
     // TODO: Move to separate class
@@ -293,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    // Store Location Updates
+
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(@NonNull Location location) {
