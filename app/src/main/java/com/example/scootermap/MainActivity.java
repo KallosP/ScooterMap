@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mapFragment.getMapAsync(this);
 
-        APIHandler.setupAPIs();
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -151,9 +150,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Sets location to the users location whenever button is clicked
         enableMyLocation();
-
-        APIHandler.displayScooterMarkers(mMap);
-
+//        APIHandler.setupAPIs();
+//
+//        APIHandler.displayScooterMarkers(mMap);
     }
 
 
@@ -302,6 +301,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         // Set the current lat and long
         mCurrentLocation = location;
+
+        // TODO: Clean up out of range markers
+        APIHandler.setupAPIs(mCurrentLocation);
+        APIHandler.displayScooterMarkers(mMap);
+
 
 //        Log.d("TEST", "Lat: " + mCurrentLocation.getLatitude());
 //        Log.d("TEST", "Long: " + mCurrentLocation.getLongitude());

@@ -1,5 +1,6 @@
 package com.example.scootermap;
 
+import android.location.Location;
 import android.os.Handler;
 import android.util.Log;
 
@@ -10,6 +11,8 @@ import androidx.core.app.ActivityCompat;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +21,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.UUID;
 
 import okhttp3.Call;
@@ -31,77 +35,129 @@ import okhttp3.Response;
 public class APIHandler extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     // okHTTP header values
-    final String email = "retepsollak@gmail.com";
+    final static String email = "retepsollak@gmail.com";
     private static final String BASE_URL = "https://api-auth.prod.birdapp.com/api/v1/auth/email";
     private static final MediaType JSON = MediaType.parse("application/json");
     private static final String USER_AGENT = "Bird/4.119.0(co.bird.Ride; build:3; Android 10)";
     private static final String GUID = UUID.randomUUID().toString();
 
     // Bird token
-    static String token = "eyJhbGciOiJSUzUxMiJ9.eyJqdGkiOiJiMjQ0ZmRlMy0wNDRlLTRmOWUtYmZhNi1iOTM0YTA2MGUyZWIiLCJzdWIiOiJkMjMwNDNjMC01NjYxLTRkMTctOTNkMC1iOWQ2ZWYwOTkzYzQiLCJuYmYiOjE2OTA5MTk0NjIsImV4cCI6MTY5MTAwNTg2MiwiYXVkIjoiYmlyZC5zZXJ2aWNlcyIsImlzcyI6ImJpcmQuYXV0aCIsImlhdCI6MTY5MDkxOTQ2Miwicm9sZXMiOlsiVVNFUiJdLCJhcHAiOiI3YjhlZDk1NS02ZTNhLTRlZWMtYmEyMC04OGFmOWQ3YWVhNzYiLCJ2ZXIiOiIwLjAuMiJ9.gekVgRFujLRwaLapgb2z1IiprT-9ptIhLGC_G4XxIEWErroaNTtXScka-r7m_yIAAwTAW7-U6LLGz1mhfckQWNQYFm8mxVtxazSirVJRUUFT16ROlrevq84a1uejpR7mMcFLgJ4C8C76DSZTZJfNvvz3KlfYp_ruSX0J49lgwyc4S3QtUyeyFJ5RlbGz4vholUP_2X_KB2U_iEOozlxa_7s30_hldUJIW8UvhPkKGjyaz-Hu0rf4ITqVUaDK4UNFXyjgpcE670ziyiqNAuGkEOfJ7KfUaWQCkvogARUjg4mZeW9NDDAUzS436_txcVW5k2CNEX9jdmjqFeJtKo3TMOd-15uJo_fuCsSM1y8uQWjqPvNXmCxv92KoBmgjIbJZPSWIIYoy_1cJuHIf5aOpmSUGTwfwhK1x8tGZMy04Fyjj89vYybsdRyiOlpX94WJTwBkwddnYuzx_Reo2i5dKRAON6qGQSvuMGwHT0i05x3dr8PTKQ-ZaqhAl0Ixql3L2RyQe_ztaTCRRW1FL6_IZMDx9sfB9MJZFj99jpTlo5RfVY7PtHNr4GIAVEuMdoWYapNxeKRtdKG9sDaeOX4b4YzH5qTmIcd8F1apwfPc6D6A_ou9xe2KJcYIGm2pSGCkjgLrYXG7aYUfxTN_EvJyx415wfU95Kk96ACDaSNmEs2I";
+    static String token = "eyJhbGciOiJSUzUxMiJ9.eyJqdGkiOiIzZjFkNjgzNC0xYTU3LTQxOWUtYWM2NC1jN2QxNjY3Yzc0NzUiLCJzdWIiOiJkMjMwNDNjMC01NjYxLTRkMTctOTNkMC1iOWQ2ZWYwOTkzYzQiLCJuYmYiOjE2OTEwMjkzNDYsImV4cCI6MTY5MTExNTc0NiwiYXVkIjoiYmlyZC5zZXJ2aWNlcyIsImlzcyI6ImJpcmQuYXV0aCIsImlhdCI6MTY5MTAyOTM0Niwicm9sZXMiOlsiVVNFUiJdLCJhcHAiOiI3YjhlZDk1NS02ZTNhLTRlZWMtYmEyMC04OGFmOWQ3YWVhNzYiLCJ2ZXIiOiIwLjAuMiJ9.g0scw-wlI6TWQzd8LBqRPMas-IC7_AyR5em3Jl7eSxzE2efTbuhNMxTHJdjrW2FpQ9_oLbF5sJDZtQLXhFq0KWbzbxpXZzLLXmKU8ERhOdftC75O6Gd5lpIao7dn09hKkkn-Q6xdmihHA_VYYL5IOxSnernldBmLMSdcnlycdoSgGIoLQRsdSkXeqAX9ytuJPiEUlMjsSOECmpLHODXkwoHE3UE2EGieDbzk73vXXCaWRgltZkV-2jtOBMWX17uGZcaV4FaJ5WcT0IVEjyqVbq4CGTv38nZPodSKLGY-pq_4IEELvpp5aGP3SYw6RelaI5GCgUkVIYPQ0vWo34QcqT8lCIkk0AmIeILdqvcnmxenFVFEpRXC_Zks6W3GrFLv83TSkTEALMzmIcI6s2ZsAUQXhWBI5uCcZTXMhHUGE9gJs4zgU08eOgsoee0DBIJJmFXkvib-kEJ2pyTZPoYQrtQvNiiDndqCFLH95RXSxBPD8IHtY-gJaDglHuOE5IK4pW94KjXP181xqEpfubv_MJHxOOF83SXwFrHHP-UnGohitcv68WQqf5nfM6ic3am_41PziEqchJry3ZG4mUV5UMs3nLD2GZcwkhgFwZLflgr4lh9_hHZ4o_MII_4cwi3DHTarMy84N43foRl64eWMvsCqdaU0X3f9LoxmtdIJTbQ";
 
     static ArrayList<String> scooters;
     static ArrayList<LatLng> scooterCoords = new ArrayList<>();
 
-    static boolean scooterCoordsPopulated = false;
+    static boolean storedScooters = false;
 
-    // TODO:
-    //        - change lat/long in REQUEST LOCATION to user's current lat/long
-    //        - create system for getting, refreshing, and using AUTH token
-    static void setupAPIs() {
+    static Request getAuthToken(OkHttpClient client) {
+        String requestBody = "{\"email\":\"" + email + "\"}";
+        RequestBody body = RequestBody.create(JSON, requestBody);
 
-        // HTTP client
-        OkHttpClient client = new OkHttpClient();
+        return new Request.Builder()
+                .url(BASE_URL)
+                .header("User-Agent", USER_AGENT)
+                .header("Device-Id", GUID)
+                .header("Platform", "android")
+                .header("App-Version", "4.119.0")
+                .header("Content-Type", "application/json")
+                .post(body)
+                .build();
+    }
 
-        // GET AUTH TOKEN VIA EMAIL (WORKING)
-//        String requestBody = "{\"email\":\"" + email + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//
-//        Request request = new Request.Builder()
-//                .url(BASE_URL)
-//                .header("User-Agent", USER_AGENT)
-//                .header("Device-Id", GUID)
-//                .header("Platform", "android")
-//                .header("App-Version", "4.119.0")
-//                .header("Content-Type", "application/json")
-//                .post(body)
-//                .build();
+    static Request useAuthToken(OkHttpClient client) {
+        String requestBody = "{\"token\":\"" + token + "\"}";
+        RequestBody body = RequestBody.create(JSON, requestBody);
+        return new Request.Builder()
+                .url("https://api-auth.prod.birdapp.com/api/v1/auth/magic-link/use")
+                .header("Device-Id", GUID)
+                .post(body)
+                .build();
+    }
 
-        // USE AUTH TOKEN (WORKING)
-//        String requestBody = "{\"token\":\"" + token + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//        Request request = new Request.Builder()
-//                .url("https://api-auth.prod.birdapp.com/api/v1/auth/magic-link/use")
-//                .header("Device-Id", GUID)
-//                .post(body)
-//                .build();
+    static Request refreshAuthToken(OkHttpClient client) {
+        // TODO: use updated refresh token from previous request
 
-        // REFRESH AUTH TOKEN (MUST USE REFRESH TOKEN)
-//        String requestBody = "{\"token\":\"" + token + "\"}";
-//        RequestBody body = RequestBody.create(JSON, requestBody);
-//
-//        Request request = new Request.Builder()
-//                .url("https://api-auth.prod.birdapp.com/api/v1/auth/refresh/token")
-//                .addHeader("User-Agent", USER_AGENT)
-//                .addHeader("Device-Id", GUID)
-//                .addHeader("Platform", "android")
-//                .addHeader("App-Version", "4.119.0")
-//                .addHeader("Content-Type", "application/json")
-//                .addHeader("Authorization", "Bearer " + token)
-//                .post(body)
-//                .build();
+        String requestBody = "{\"token\":\"" + token + "\"}";
+        RequestBody body = RequestBody.create(JSON, requestBody);
 
-        //        // REQUEST LOCATION (MUST USE ACCESS TOKEN)
-        Request request = new Request.Builder()
+        return new Request.Builder()
+                .url("https://api-auth.prod.birdapp.com/api/v1/auth/refresh/token")
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("Device-Id", GUID)
+                .addHeader("Platform", "android")
+                .addHeader("App-Version", "4.119.0")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer " + token)
+                .post(body)
+                .build();
+
+        // TODO: update access and refresh tokens
+    }
+
+    static Request requestScooterLocations(OkHttpClient client, Location userLocation) {
+        return new Request.Builder()
                 .url("https://api-bird.prod.birdapp.com/bird/nearby?latitude=37.77184&longitude=-122.40910&radius=1000")
                 .header("Authorization", "Bearer " + token)
                 .header("User-Agent", USER_AGENT)
                 .header("legacyrequest", "false")
                 .header("Device-Id", GUID)
                 .header("App-Version", "4.119.0")
-                .header("Location", "{\"latitude\":34.07005148224879,\"longitude\":-118.44380658840988,\"altitude\":500,\"accuracy\":65,\"speed\":-1,\"heading\":-1}")
+                .header("Location", "{\"latitude\":" + userLocation.getLatitude() + ",\"longitude\":" + userLocation.getLongitude() + ",\"altitude\":500,\"accuracy\":65,\"speed\":-1,\"heading\":-1}")
                 .get()
                 .build();
+    }
+
+    static void manageClientResponse(OkHttpClient client, Request request){
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                //Log.d("TEST", "Failure");
+                //e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws
+                    IOException {
+                // Log.d("TEST", "Entered");
+                if(response.isSuccessful()){
+                    String myResponse = response.body().string();
+
+                    Log.d("TEST", myResponse);
+
+                    scooters = organizeScooterData(myResponse);
+                    if(scooters == null){
+                        Log.d("SCOOTER ERROR", "ERROR: Scooters list is null.");
+                    }
+                    else {
+                        //Log.d("TEST", "Latitude: " + scooters.get(0));
+                    }
+                }
+            }
+        });
+    }
+
+    // TODO:
+    //        - create system for getting, refreshing, and using AUTH token
+    //        - remove markers that aren't around user
+    static void setupAPIs(Location userLocation) {
+
+        // HTTP client
+        OkHttpClient client = new OkHttpClient();
+
+        Request request;
+
+        // GET AUTH TOKEN VIA EMAIL (WORKING)
+//        request = getAuthToken(client);
+
+        // USE AUTH TOKEN (WORKING)
+//        request = useAuthToken(client);
+
+        // REFRESH AUTH TOKEN (MUST USE REFRESH TOKEN)
+//        request = refreshAuthToken(client);
+
+        // REQUEST LOCATION (MUST USE ACCESS TOKEN)
+        request = requestScooterLocations(client, userLocation);
+        manageClientResponse(client, request);
 
         // FIXME: REQUEST AREAS (NOT WORKING - 404)
 //        Request request = new Request.Builder()
@@ -122,33 +178,14 @@ public class APIHandler extends AppCompatActivity implements ActivityCompat.OnRe
 //                .get()
 //                .build();
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                //Log.d("TEST", "Failure");
-                //e.printStackTrace();
-            }
 
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws
-                    IOException {
-                // Log.d("TEST", "Entered");
-                if(response.isSuccessful()){
-                    String myResponse = response.body().string();
-
-                    scooters = organizeScooterData(myResponse);
-                    if(scooters == null){
-                        Log.d("SCOOTER ERROR", "ERROR: Scooters list is null.");
-                    }
-                    else {
-                        //Log.d("TEST", "Latitude: " + scooters.get(0));
-                    }
-                }
-            }
-        });
 
     }
 
+    static HashMap<String, MarkerOptions> markers = new HashMap<String, MarkerOptions>();
+    static ArrayList<String> markerIDs = new ArrayList<>();
+
+    static int i = 0;
     static ArrayList<String> organizeScooterData(String scooterData){
         try {
             JSONObject jsonObject = new JSONObject(scooterData);
@@ -156,6 +193,7 @@ public class APIHandler extends AppCompatActivity implements ActivityCompat.OnRe
 
             double latitude = -1, longitude = -1;
             int batteryLevel = -1;
+            String scooterID = "";
 
             for (int i = 0; i < birdsArray.length(); i++) {
                 JSONObject scooterObject = birdsArray.getJSONObject(i);
@@ -165,16 +203,28 @@ public class APIHandler extends AppCompatActivity implements ActivityCompat.OnRe
                 longitude = locationObject.getDouble("longitude");
 
                 batteryLevel = scooterObject.getInt("battery_level");
+                scooterID = scooterObject.getString("id");
 
                 // Log.d("TEST", "Scooter " + i + " Latitude: " + latitude + ", Longitude: " + longitude + ", Battery: " + batteryLevel);
-                scooterCoords.add(new LatLng(latitude, longitude));
+                LatLng tmpCoord = new LatLng(latitude, longitude);
+
+                // Only add new coordinates
+//                if(!scooterCoords.contains(tmpCoord)){
+//                    //Log.d("TEST", ++i + "");
+//                    scooterCoords.add(tmpCoord);
+//                }
+                MarkerOptions markerOptions = new MarkerOptions().position(tmpCoord).title("Bird");
+
+                markers.put(scooterID, markerOptions);
+                markerIDs.add(scooterID);
             }
 
-            scooterCoordsPopulated = true;
+            storedScooters = true;
 
             return new ArrayList<>(Arrays.asList(Double.toString(latitude), Double.toString(longitude), Integer.toString(batteryLevel)));
 
         } catch (JSONException e) {
+            // No Scooters Found
             e.printStackTrace();
         }
         return null;
@@ -191,9 +241,11 @@ public class APIHandler extends AppCompatActivity implements ActivityCompat.OnRe
         Runnable updateMarkersRunnable = new Runnable() {
             @Override
             public void run() {
-                if (scooterCoordsPopulated) {
-                    // If scooterCoords is populated, call addScooterMarkers() and stop the periodic updates
-                    Utilities.convertCoordsToMarker(mMap, scooterCoords);
+                if (storedScooters) {
+                    // FIXME: createAllMarkers() is causing app crash
+                    // If all scooters have been stored, call addScooterMarkers() and stop the periodic updates
+                   // Log.d("TEST", "Current Size:" + scooterCoords.size() + "");
+                    //Utilities.createAllMarkers(mMap, markers, markerIDs);
                     handler.removeCallbacks(this);
                 } else {
                     // If scooterCoords is not populated yet, continue periodic updates
